@@ -1,149 +1,122 @@
+import { useState, useEffect } from 'react';
 import { PageHeader, Card, StatCard } from '../../components/layout/Common';
-import { 
-  Smartphone, 
-  Send, 
-  Activity, 
-  AlertCircle, 
-  BarChart2,
-  MoreVertical,
-  RefreshCw} from 'lucide-react';
+import {
+  Smartphone, Send, Activity, AlertCircle, BarChart2,
+  Users, Database, Cpu, Server, Loader2, RefreshCw
+} from 'lucide-react';
 import { cn } from '../../lib/utils';
 
 const MobilePage = () => {
-  const versions = [
-    { platform: 'iOS', version: '2.4.5', status: 'Stable', users: '65%', release: '15 Dec 2023', color: 'slate' },
-    { platform: 'Android', version: '2.4.2', status: 'Updating', users: '30%', release: '18 Dec 2023', color: 'emerald' },
-    { platform: 'iOS', version: '2.4.0', status: 'Deprecated', users: '3%', release: '02 Nov 2023', color: 'rose' },
-    { platform: 'Android', version: '2.3.8', status: 'Deprecated', users: '2%', release: '20 Oct 2023', color: 'rose' },
-  ];
+  const [sysStats, setSysStats] = useState<any>(null);
+  const [loading, setLoading]   = useState(true);
+
+  const adminFetch = (path: string) =>
+    fetch(`https://swifttrustapi.com/api/admin${path}`, {
+      headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}`, 'Content-Type': 'application/json' },
+    }).then(r => r.json()).then(d => d.data ?? d);
+
+  useEffect(() => {
+    adminFetch('/config/stats')
+      .then(s => setSysStats(s))
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) return (
+    <div className="flex items-center justify-center h-64">
+      <Loader2 size={32} className="animate-spin text-primary-500" />
+    </div>
+  );
+
+  const uptimeDays = sysStats?.uptime ? Math.floor(sysStats.uptime / 86400) : 0;
+  const uptimeHours = sysStats?.uptime ? Math.floor((sysStats.uptime % 86400) / 3600) : 0;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
-      <PageHeader 
-        title="Mobile App Governance" 
+      <PageHeader
+        title="Mobile App Governance"
         description="Release management, push notification engine, and mobile API performance monitoring."
         actions={
           <button className="flex items-center gap-2 px-6 py-3 bg-primary-600 text-white rounded-xl text-xs font-black uppercase tracking-widest hover:bg-primary-700 shadow-lg shadow-primary-200 transition-all active:scale-95">
-            <Send size={18} strokeWidth={3} />
-            Dispatch Push Alert
+            <Send size={18} strokeWidth={3} /> Dispatch Push Alert
           </button>
         }
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard label="Provisioned Devices" value="12,560" icon={Smartphone} color="primary" />
-        <StatCard label="App Session Avg" value="4m 32s" icon={Activity} color="green" />
-        <StatCard label="System Crash Rate" value="0.02%" icon={AlertCircle} color="amber" />
+        <StatCard label="Total Customers" value={String(sysStats?.totalUsers || 0)}        icon={Users}       color="primary" />
+        <StatCard label="Total Wallets"   value={String(sysStats?.totalWallets || 0)}      icon={Database}    color="green"   />
+        <StatCard label="Server Uptime"   value={`${uptimeDays}d ${uptimeHours}h`}         icon={Activity}    color="amber"   />
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <Card className="lg:col-span-2" title="Release Version Control" description="Track app adoption and manage active binary versions across stores.">
-          <div className="overflow-x-auto -mx-8">
-            <table className="w-full text-left text-sm whitespace-nowrap">
-              <thead className="bg-slate-50/50 border-y border-slate-100 text-slate-400 font-black uppercase text-[10px] tracking-[0.15em]">
-                <tr>
-                  <th className="px-8 py-4">Environment</th>
-                  <th className="px-8 py-4">Build #</th>
-                  <th className="px-8 py-4">Deployment</th>
-                  <th className="px-8 py-4">Market Share</th>
-                  <th className="px-8 py-4 text-right">Actions</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-50">
-                {versions.map((v, i) => (
-                  <tr key={i} className="hover:bg-slate-50/30 transition-colors group cursor-pointer">
-                    <td className="px-8 py-5">
-                       <div className="flex items-center gap-3">
-                          <div className={cn(
-                            "w-9 h-9 rounded-lg flex items-center justify-center border transition-all group-hover:scale-105 shadow-sm",
-                            v.platform === 'iOS' ? "bg-slate-900 text-white border-slate-800" : "bg-emerald-50 text-emerald-600 border-emerald-100"
-                          )}>
-                            <Smartphone size={18} strokeWidth={2.5} />
-                          </div>
-                          <span className="font-black text-slate-900 tracking-tight leading-none">{v.platform}</span>
-                       </div>
-                    </td>
-                    <td className="px-8 py-5 text-slate-600 font-mono font-bold text-xs">v{v.version}</td>
-                    <td className="px-8 py-5">
-                      <span className={cn(
-                        "inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
-                        v.status === 'Stable' ? "bg-emerald-50 text-emerald-700 border-emerald-100" : 
-                        v.status === 'Updating' ? "bg-primary-50 text-primary-700 border-primary-100" : 
-                        "bg-rose-50 text-rose-700 border-rose-100"
-                      )}>
-                        {v.status}
-                      </span>
-                    </td>
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <div className="w-24 bg-slate-100 h-1.5 rounded-full overflow-hidden border border-slate-200 shadow-inner">
-                          <div className="bg-primary-500 h-full rounded-full" style={{ width: v.users }} />
-                        </div>
-                        <span className="text-[10px] text-slate-500 font-black uppercase tracking-tighter">{v.users}</span>
-                      </div>
-                    </td>
-                    <td className="px-8 py-5 text-right">
-                      <div className="flex items-center justify-end gap-1">
-                        <button title="Rollback Version" className="p-2 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition-all">
-                          <RefreshCw size={18} strokeWidth={2.5} />
-                        </button>
-                        <button className="p-2 text-slate-400 hover:text-slate-900 hover:bg-slate-100 rounded-lg transition-all">
-                          <MoreVertical size={18} strokeWidth={2.5} />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <Card title="System Performance" description="Real-time backend server metrics.">
+          <div className="grid grid-cols-2 gap-4">
+            {[
+              { label: 'Node Version',  value: sysStats?.nodeVersion || '—',                     icon: Server,   color: 'primary' },
+              { label: 'Memory Usage',  value: `${sysStats?.memoryMB || 0} MB`,                  icon: Cpu,      color: 'amber'   },
+              { label: 'Environment',   value: sysStats?.env || 'production',                     icon: Activity, color: 'emerald' },
+              { label: 'Total Txns',    value: String(sysStats?.totalTransactions?.toLocaleString() || 0), icon: Database, color: 'primary' },
+            ].map((m, i) => (
+              <div key={i} className="p-5 bg-slate-50 rounded-2xl border border-slate-100 group hover:border-primary-200 transition-all">
+                <div className="flex items-center gap-3 mb-3">
+                  <m.icon size={16} className={cn(
+                    m.color === 'primary' ? "text-primary-500" :
+                    m.color === 'amber'   ? "text-amber-500"   :
+                    "text-emerald-500"
+                  )} />
+                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{m.label}</span>
+                </div>
+                <p className="text-lg font-black text-slate-900 tracking-tighter">{m.value}</p>
+              </div>
+            ))}
           </div>
         </Card>
 
-        <div className="space-y-8">
-          <Card title="Mobile API Integrity" description="Real-time backend response metrics.">
-            <div className="h-48 flex flex-col items-center justify-center text-slate-400 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200 group">
-               <BarChart2 size={40} className="mb-4 opacity-20 transition-transform group-hover:scale-110 duration-500" strokeWidth={1.5} />
-               <p className="text-[10px] font-black uppercase tracking-[0.2em]">Stream Processing...</p>
+        <Card title="Push Notification Engine" description="Firebase Cloud Messaging status.">
+          <div className="h-full flex flex-col items-center justify-center py-8 text-center gap-4 bg-slate-50/50 rounded-2xl border-2 border-dashed border-slate-200">
+            <div className="w-16 h-16 rounded-2xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+              <Send size={28} className="text-primary-500" strokeWidth={1.5} />
             </div>
-            <div className="mt-6 grid grid-cols-2 gap-4">
-               <div className="p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
-                  <p className="text-[9px] font-black uppercase text-slate-400 mb-1 tracking-widest">Avg Latency</p>
-                  <p className="text-xl font-black text-slate-900 leading-none tracking-tighter">124ms</p>
-               </div>
-               <div className="p-4 bg-white border border-slate-100 rounded-xl shadow-sm">
-                  <p className="text-[9px] font-black uppercase text-slate-400 mb-1 tracking-widest">Store Uptime</p>
-                  <p className="text-xl font-black text-emerald-600 leading-none tracking-tighter">99.9%</p>
-               </div>
+            <div>
+              <p className="font-black text-slate-900 text-sm">FCM Configured</p>
+              <p className="text-xs text-slate-400 font-bold mt-1">Firebase push notifications active via service account</p>
             </div>
-          </Card>
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-emerald-50 border border-emerald-100 rounded-full">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <span className="text-[10px] font-black text-emerald-700 uppercase tracking-widest">Connected</span>
+            </div>
+          </div>
+        </Card>
 
-          <Card title="Feature Orchestration" description="Enable/Disable modules in real-time.">
-            <div className="space-y-3">
-               {[
-                 { label: 'Biometric Auth', enabled: true },
-                 { label: 'Dark Mode Beta', enabled: false },
-                 { label: 'Instant Settlement', enabled: true },
-                 { label: 'Virtual Assets', enabled: false },
-               ].map((f, i) => (
-                 <div key={i} className="flex items-center justify-between p-3.5 border border-slate-100 rounded-xl bg-slate-50/50 group hover:bg-white transition-all">
-                    <div className="flex items-center gap-3">
-                       <div className={cn("w-1.5 h-1.5 rounded-full", f.enabled ? "bg-emerald-500" : "bg-slate-300")}></div>
-                       <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{f.label}</span>
-                    </div>
-                    <button className={cn(
-                      "w-10 h-5 rounded-full transition-all relative border-2",
-                      f.enabled ? "bg-primary-600 border-primary-600 shadow-sm shadow-primary-200" : "bg-slate-200 border-slate-200"
-                    )}>
-                      <div className={cn(
-                        "absolute top-0.5 bg-white w-3 h-3 rounded-full transition-all shadow-sm",
-                        f.enabled ? "right-0.5" : "left-0.5"
-                      )} />
-                    </button>
-                 </div>
-               ))}
-            </div>
-          </Card>
-        </div>
+        <Card title="App Version Management" description="Mobile release tracking is managed externally via App Store / Play Store.">
+          <div className="p-6 bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200 flex flex-col items-center justify-center gap-3 text-center py-10">
+            <Smartphone size={36} className="text-slate-300" strokeWidth={1.5} />
+            <p className="font-black text-slate-500 text-sm">Version data not tracked server-side</p>
+            <p className="text-xs text-slate-400 font-bold max-w-xs leading-relaxed">
+              App version distribution is managed through the Apple App Store and Google Play Store consoles.
+            </p>
+          </div>
+        </Card>
+
+        <Card title="Server Health" description="Live process information.">
+          <div className="space-y-4">
+            {[
+              { label: 'Process Uptime',  value: `${uptimeDays}d ${uptimeHours}h`,            status: 'ok'  },
+              { label: 'Heap Memory',     value: `${sysStats?.memoryMB || 0} MB`,              status: 'ok'  },
+              { label: 'Environment',     value: sysStats?.env || 'production',                status: 'ok'  },
+              { label: 'Total Customers', value: sysStats?.totalUsers?.toLocaleString() || '0', status: 'ok' },
+            ].map((item, i) => (
+              <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-xl border border-slate-100">
+                <span className="text-xs font-black text-slate-600 uppercase tracking-tight">{item.label}</span>
+                <div className="flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  <span className="text-xs font-bold text-slate-900">{item.value}</span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </Card>
       </div>
     </div>
   );
