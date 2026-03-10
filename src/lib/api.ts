@@ -35,6 +35,9 @@ export const api = {
   // Customers
   getCustomers: () => request<any>('/customers'),
   getCustomerTxns: (id: string) => request<any>(`/customers/${id}/transactions`),
+  getCustomerBankOneTxns: (id: string, limit = 50) =>
+    request<any>(`/customers/${id}/bankone-txns?numberOfItems=${limit}`),
+  getCustomerAddress: (id: string) => request<any>(`/customers/${id}/address`),
   getCustomerDevices: (id: string) => request<any>(`/customers/${id}/devices`),
   updateCustomer: (data: any) => request<any>('/customers', { method: 'PUT', body: JSON.stringify(data) }),
   upgradeCustomer: (customerId: string, accessLevel: string) =>
