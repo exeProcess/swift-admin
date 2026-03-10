@@ -4,14 +4,20 @@ import { RefreshCw, Search, Filter, CheckCircle2, Download, TrendingUp, Settings
 import { cn } from '../../lib/utils';
 import { api } from '../../lib/api';
 
+const adminFetch = (path: string) =>
+  fetch(`https://swifttrustapi.com/api/admin${path}`, {
+    headers: { Authorization: `Bearer ${localStorage.getItem('admin_token')}`, 'Content-Type': 'application/json' },
+  }).then(r => r.json()).then(d => d.data ?? d);
+
 const PaymentsPage = () => {
   const [transactions, setTransactions] = useState<any[]>([]);
   const [total, setTotal]               = useState(0);
+  const [tiers, setTiers]               = useState<any[]>([]);
   const [loading, setLoading]           = useState(true);
   const [search, setSearch]             = useState('');
   const [statusFilter, setStatusFilter] = useState('');
 
-  const load = (status?: string) => {
+  const loadTxns = (status?: string) => {
     setLoading(true);
     api.getTransactions({ status, limit: 50 })
       .then(d => { setTransactions(d.transactions || []); setTotal(d.total || 0); })
@@ -19,7 +25,10 @@ const PaymentsPage = () => {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { load(); }, []);
+  useEffect(() => {
+    loadTxns();
+    adminFetch('/config/tiers').then(d => setTiers(d.tiers || [])).catch(() => {});
+  }, []);
 
   const filtered = transactions.filter(t => {
     const q = search.toLowerCase();
@@ -29,9 +38,9 @@ const PaymentsPage = () => {
       t.user?.lastName?.toLowerCase().includes(q);
   });
 
-  const settled = transactions.filter(t => t.transactionStatus === 'SUCCESS').reduce((s, t) => s + Number(t.amount || 0), 0);
+  const settled     = transactions.filter(t => t.transactionStatus === 'SUCCESS').reduce((s, t) => s + Number(t.amount || 0), 0);
   const successRate = transactions.length ? (transactions.filter(t => t.transactionStatus === 'SUCCESS').length / transactions.length * 100).toFixed(1) : '0';
-  const reversals = transactions.filter(t => t.transactionStatus === 'REVERSED').length;
+  const reversals   = transactions.filter(t => t.transactionStatus === 'REVERSED').length;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -48,9 +57,9 @@ const PaymentsPage = () => {
       />
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <StatCard label="Daily Settlement" value={`₦${(settled / 1000).toFixed(0)}K`} icon={TrendingUp} color="primary" />
-        <StatCard label="Success Rate"     value={`${successRate}%`}                   icon={CheckCircle2} color="green" />
-        <StatCard label="Reversals"        value={String(reversals)}                    icon={RefreshCw}   color="amber" />
+        <StatCard label="Daily Settlement" value={`₦${(settled / 1000).toFixed(0)}K`} icon={TrendingUp}  color="primary" />
+        <StatCard label="Success Rate"     value={`${successRate}%`}                   icon={CheckCircle2} color="green"  />
+        <StatCard label="Reversals"        value={String(reversals)}                    icon={RefreshCw}   color="amber"  />
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -63,7 +72,7 @@ const PaymentsPage = () => {
             </div>
             <div className="flex gap-2">
               {['', 'SUCCESS', 'FAILED', 'PENDING'].map(s => (
-                <button key={s} onClick={() => { setStatusFilter(s); load(s || undefined); }}
+                <button key={s} onClick={() => { setStatusFilter(s); loadTxns(s || undefined); }}
                   className={cn("px-3 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest border transition-all",
                     statusFilter === s ? "bg-primary-600 text-white border-primary-600" : "bg-slate-50 text-slate-600 border-slate-200 hover:bg-slate-100"
                   )}>
@@ -91,8 +100,8 @@ const PaymentsPage = () => {
                   {filtered.map((t, i) => (
                     <tr key={i} className="hover:bg-slate-50/30 transition-colors cursor-pointer">
                       <td className="px-8 py-5">
-                        <p className="font-black text-slate-900 leading-none text-xs font-mono">{t.transactionReference || t.id?.slice(0,12)}</p>
-                        <p className="text-[10px] text-slate-400 font-bold mt-1">{new Date(t.createdAt).toLocaleString('en-NG', { dateStyle:'short', timeStyle:'short' })}</p>
+                        <p className="font-black text-slate-900 leading-none text-xs font-mono">{t.transactionReference || t.id?.slice(0, 12)}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-1">{new Date(t.createdAt).toLocaleString('en-NG', { dateStyle: 'short', timeStyle: 'short' })}</p>
                       </td>
                       <td className="px-8 py-5 font-bold text-slate-700">{t.user ? `${t.user.firstName} ${t.user.lastName}` : '—'}</td>
                       <td className="px-8 py-5">
@@ -121,31 +130,27 @@ const PaymentsPage = () => {
         </Card>
 
         <div className="space-y-8">
-          <Card title="Threshold Matrix" description="Global and tier-based limits.">
-            <div className="space-y-4">
-              {[
-                { label: 'Tier 1 (Daily)', limit: '₦50,000',     color: 'slate'   },
-                { label: 'Tier 2 (Daily)', limit: '₦500,000',    color: 'primary' },
-                { label: 'Tier 3 (Daily)', limit: '₦5,000,000',  color: 'emerald' },
-                { label: 'ATM Max',        limit: '₦100,000',    color: 'amber'   },
-              ].map((limit, i) => (
-                <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group hover:border-primary-200 transition-all">
-                  <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-xl bg-white border-2 shadow-sm flex items-center justify-center">
-                      <ShieldCheck size={18} className={cn(
-                        limit.color === 'slate' ? 'text-slate-400' : limit.color === 'primary' ? 'text-primary-600' :
-                        limit.color === 'emerald' ? 'text-emerald-600' : 'text-amber-600'
-                      )} strokeWidth={2.5} />
-                    </div>
-                    <div>
-                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">{limit.label}</p>
-                      <p className="text-sm font-mono font-black text-slate-900">{limit.limit}</p>
+          <Card title="Threshold Matrix" description="Active tier transaction limits.">
+            {tiers.length === 0 ? (
+              <div className="py-8 text-center text-slate-400 font-bold text-xs uppercase">Loading limits...</div>
+            ) : (
+              <div className="space-y-4">
+                {tiers.map((tier, i) => (
+                  <div key={i} className="p-4 bg-slate-50 rounded-2xl border border-slate-100 flex items-center justify-between group hover:border-primary-200 transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-10 h-10 rounded-xl bg-white border-2 shadow-sm flex items-center justify-center">
+                        <ShieldCheck size={18} className="text-primary-600" strokeWidth={2.5} />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 leading-none mb-1">{tier.tier} (Daily)</p>
+                        <p className="text-sm font-mono font-black text-slate-900">{tier.dailyLimit}</p>
+                        <p className="text-[10px] text-slate-400 font-bold mt-0.5">Single: {tier.singleLimit}</p>
+                      </div>
                     </div>
                   </div>
-                  <button className="p-2 text-slate-300 hover:text-primary-600 transition-colors"><Settings size={14} /></button>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <div className="bg-primary-600 p-8 rounded-3xl text-white shadow-2xl shadow-primary-600/20 relative overflow-hidden">
