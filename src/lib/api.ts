@@ -34,7 +34,7 @@ export const api = {
 
   // Customers
   getCustomers: () => request<any>('/customers'),
-  getCustomerTxns: (id: string) => request<any>(`/customers/${id}/transactions`),
+  getCustomerTxns: (id: string, limit = 100) => request<any>(`/customers/${id}/transactions?limit=${limit}`),
   getCustomerBankOneTxns: (id: string, limit = 50) =>
     request<any>(`/customers/${id}/bankone-txns?numberOfItems=${limit}`),
   getCustomerAddress: (id: string) => request<any>(`/customers/${id}/address`),

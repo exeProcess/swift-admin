@@ -35,6 +35,7 @@ const CustomersPage = () => {
   const [customerDevices, setCustomerDevices]   = useState<any[]>([]);
   const [customerAddress, setCustomerAddress]   = useState<any>(null);
   const [bankOneTxns, setBankOneTxns]           = useState<any[]>([]);
+  const [bankOneTxnsLoaded, setBankOneTxnsLoaded] = useState(false);
   const [txnSource, setTxnSource]               = useState<'local'|'bankone'>('bankone');
   const [actionLoading, setActionLoading]       = useState('');
   const [addressLoading, setAddressLoading]     = useState(false);
@@ -53,9 +54,10 @@ const CustomersPage = () => {
     setCustomerDevices([]);
     setCustomerAddress(null);
     setBankOneTxns([]);
+    setBankOneTxnsLoaded(false);
     // Preload all tabs in parallel
-    api.getCustomerTxns(c.id).then(d => setCustomerTxns(d.transactions || [])).catch(() => {});
-    api.getCustomerDevices(c.id).then(d => setCustomerDevices(d.devices || [])).catch(() => {});
+    api.getCustomerTxns(c.id).then(d => { const list = Array.isArray(d) ? d : (d.transactions || d.data || []); setCustomerTxns(list); }).catch(() => {});
+    api.getCustomerDevices(c.id).then(d => { const list = Array.isArray(d) ? d : (d.devices || d.data || d.trustedDevices || []); setCustomerDevices(list); }).catch(() => {});
     // Load address and BankOne txns
     setAddressLoading(true);
     apiExt.getCustomerAddress(c.id)
@@ -63,8 +65,8 @@ const CustomersPage = () => {
       .catch(() => {})
       .finally(() => setAddressLoading(false));
     apiExt.getCustomerBankOneTxns(c.id)
-      .then(d => setBankOneTxns(d.transactions || []))
-      .catch(() => {});
+      .then((d: any) => { const txns = d.data?.transactions?.Message || d.data?.transactions || d.transactions?.Message || d.transactions || []; setBankOneTxns(Array.isArray(txns) ? txns : []); setBankOneTxnsLoaded(true); })
+      .catch(() => { setBankOneTxnsLoaded(true); });
   };
 
   const handlePnd = async (customerId: string, pnd: boolean) => {
@@ -570,8 +572,8 @@ const CustomersPage = () => {
                                   {t.RecordType === 'C' || t.PostingType === 'Credit' ? 'Credit' : 'Debit'}
                                 </span>
                               </td>
-                              <td className="px-6 py-4 font-mono font-black text-slate-900 text-xs">₦{fmtAmount(t.Amount)}</td>
-                              <td className="px-6 py-4 font-mono text-slate-500 text-xs">₦{fmtAmount(t.Balance)}</td>
+                              <td className="px-6 py-4 font-mono font-black text-slate-900 text-xs">₦{t.AmountInNaira ?? fmtAmount(t.Amount)}</td>
+                              <td className="px-6 py-4 font-mono text-slate-500 text-xs">₦{t.BalanceInNaira ?? fmtAmount(t.Balance)}</td>
                               <td className="px-6 py-4 text-xs text-slate-400 font-bold">
                                 {t.TransactionDate ? new Date(t.TransactionDate).toLocaleDateString('en-NG') : '—'}
                               </td>
@@ -582,7 +584,7 @@ const CustomersPage = () => {
                                 <div className="flex flex-col items-center gap-2">
                                   <History size={28} className="text-slate-200" />
                                   <p className="text-slate-400 font-bold text-xs uppercase tracking-widest">
-                                    {bankOneTxns.length === 0 ? 'No BankOne transactions found' : 'Loading...'}
+                                    {bankOneTxnsLoaded ? 'No BankOne transactions found' : 'Loading...'}
                                   </p>
                                 </div>
                               </td>

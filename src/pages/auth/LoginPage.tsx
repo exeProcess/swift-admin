@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../../lib/auth';
-import { Shield, Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -27,8 +27,8 @@ export default function LoginPage() {
     <div className="min-h-screen bg-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         <div className="flex flex-col items-center mb-10">
-          <div className="w-16 h-16 bg-primary-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-primary-600/40 mb-5">
-            <Shield size={32} className="text-white" strokeWidth={2.5} />
+          <div className="w-24 h-24 rounded-2xl flex items-center justify-center mb-5">
+            <img src="/assets/main_logo.svg" alt="Swift Trust" className="w-full h-full object-contain" onError={(e) => { (e.target as HTMLImageElement).src = "/assets/logo.jpg"; }} />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">Swift Trust MFB</h1>
           <p className="text-sm text-slate-400 font-medium mt-1 uppercase tracking-widest">Admin Control Center</p>

@@ -30,7 +30,7 @@ const CardsPage = () => {
   const handleToggleBlock = async (cardId: string, isBlocked: boolean) => {
     setTogglingId(cardId);
     try {
-      await api.updateCardStatus ? (api as any).updateCardStatus(cardId, !isBlocked) :
+      await (api as any).updateCardStatus?.(cardId, !isBlocked) ??
         adminFetch('/cards/status', { method: 'PUT', body: JSON.stringify({ cardId, isBlocked: !isBlocked }) });
       setCards(cs => cs.map(c => c.id === cardId ? { ...c, isBlocked: !isBlocked } : c));
     } catch (e: any) { alert(e.message); }

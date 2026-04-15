@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { PageHeader, Card, StatCard } from '../../components/layout/Common';
-import { RefreshCw, Search, Filter, CheckCircle2, Download, TrendingUp, Settings, ShieldCheck, Loader2 } from 'lucide-react';
+import { RefreshCw, Search, CheckCircle2, Download, TrendingUp, Settings, ShieldCheck, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { api } from '../../lib/api';
 
@@ -107,7 +107,7 @@ const PaymentsPage = () => {
                       <td className="px-8 py-5">
                         <span className="text-[10px] font-black uppercase text-slate-500 bg-slate-100 px-2 py-0.5 rounded border border-slate-200">{t.transactionType}</span>
                       </td>
-                      <td className="px-8 py-5 font-mono font-black text-slate-900 text-xs">₦{Number(t.amount).toLocaleString()}</td>
+                      <td className="px-8 py-5 font-mono font-black text-slate-900 text-xs">₦{parseFloat(String(t.amount||0).replace(/,/g,"")).toLocaleString("en-NG",{minimumFractionDigits:2})}</td>
                       <td className="px-8 py-5 text-right">
                         <span className={cn("inline-flex px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border",
                           t.transactionStatus === 'SUCCESS' ? "bg-emerald-50 text-emerald-700 border-emerald-100"

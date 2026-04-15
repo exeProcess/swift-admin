@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { PageHeader, Card, StatCard } from '../../components/layout/Common';
-import { ShieldCheck, Users, Key, Fingerprint, History, Lock, ShieldAlert, Plus, Eye, Settings, MoreVertical, UserCheck, Zap, UserPlus, Mail, Shield, X, Loader2 } from 'lucide-react';
+import { ShieldCheck, Users, Key, Fingerprint, History, Lock, ShieldAlert, Settings, UserCheck, Zap, UserPlus, Mail, Shield, X, Loader2 } from 'lucide-react';
 import { cn } from '../../lib/utils';
 import { api } from '../../lib/api';
 
